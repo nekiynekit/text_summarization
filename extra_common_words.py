@@ -44,28 +44,26 @@ class Extra_common_words_summarization:
                     weight[i][0] += self.similarity(sentences[i], sentences[j], lemma, language=language)
         return weight
 
-    def summarize(self, text, language='english'):
+    def summarize(self, text, summary_fraction=0.1, language='english'):
         nltk.download('punkt')
         nltk.download('stopwords')
         nltk.download('wordnet')
 
-        sentences = sent_tokenize(text)
+        sentences = int(sent_tokenize(text) * summary_fraction) + 1
         lemma = WordNetLemmatizer().lemmatize
         if language == 'russian':
             lemma = lema
         
         weight = sorted(self.get_weights(sentences, lemma, language=language))[::-1]
 
-        summary_len = (len(sentences) + 9) // 10
+        summary_len = len(sentences) * summary_len
         indexies = sorted([weight[i][1] for i in range(summary_len)])
         
         summary = ' '.join([sentences[i] for i in indexies])
         print(weight[0][0], ' ', weight[summary_len - 1][0])
         return summary
 
-if __name__ == '__main__':
-
-    with open('data.txt', 'r') as file:
-        text = file.read()
-        summary = Extra_common_words_summarization().summarize(text, language='russian')
-        print(summary)
+        def read_txt_file(self, text_file):
+            with open(text_file, 'r') as current_file:
+                text = current_file.read()
+            return self.summarize(text, language='russian')
