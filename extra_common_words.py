@@ -1,9 +1,11 @@
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
+
 import nltk
 import re
 import pymorphy2 as pm2
+
 
 morph = pm2.MorphAnalyzer()
 
@@ -12,6 +14,11 @@ def lema(word):
     return p.normal_form
 
 class Extra_common_words_summarization:
+
+    def __init__(self):
+        nltk.download('punkt')
+        nltk.download('stopwords')
+        nltk.download('wordnet')
 
     def preprocess(self, sentence, lemma, language='english'):
         regular = r'[a-z]*'
@@ -45,18 +52,14 @@ class Extra_common_words_summarization:
         return weight
 
     def summarize(self, text, summary_fraction=0.1, language='english'):
-        nltk.download('punkt')
-        nltk.download('stopwords')
-        nltk.download('wordnet')
-
-        sentences = int(sent_tokenize(text) * summary_fraction) + 1
+        sentences = sent_tokenize(text)
         lemma = WordNetLemmatizer().lemmatize
         if language == 'russian':
             lemma = lema
         
         weight = sorted(self.get_weights(sentences, lemma, language=language))[::-1]
 
-        summary_len = len(sentences) * summary_len
+        summary_len = int(len(sentences) * summary_fraction) + 1
         indexies = sorted([weight[i][1] for i in range(summary_len)])
         
         summary = ' '.join([sentences[i] for i in indexies])
