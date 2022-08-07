@@ -2,3 +2,4 @@
 __pycache__/
 moview_venv/
 moview/db.sqlite3
+scripts/__pycache__/

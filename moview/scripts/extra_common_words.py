@@ -2,6 +2,8 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 
+from collections import defaultdict
+
 import nltk
 import re
 import pymorphy2 as pm2
@@ -16,24 +18,28 @@ def lema(word):
 class Extra_common_words_summarization:
 
     def __init__(self):
-        nltk.download('punkt')
         nltk.download('stopwords')
-        nltk.download('wordnet')
 
-    def preprocess(self, sentence, lemma, language='english'):
+    def preprocess(self, sentence, lemma, language='english', taggs=None):
         regular = r'[a-z]*'
         if language == 'russian':
             regular = r'[а-я]*'
 
         copy = sentence.lower()
         words = word_tokenize(copy)
-        final_form = [lemma(word) for word in words if not word in stopwords.words(language)]
+        if taggs is None:
+            final_form = [lemma(word) for word in words if not word in stopwords.words(language)]
+            final_form = [word for word in final_form if re.fullmatch(regular, word)]
+            return final_form
+        final_form = [lemma(word) for word in words \
+            if not word in stopwords.words(language) \
+                and morph.parse(word)[0].tag.POS in taggs]
         final_form = [word for word in final_form if re.fullmatch(regular, word)]
         return final_form
 
     def similarity(self, sent1, sent2, lemma, language='english'):
-        prepared_1 = self.preprocess(sent1, lemma, language=language)
-        prepared_2 = self.preprocess(sent2, lemma, language=language)
+        prepared_1 = set(self.preprocess(sent1, lemma, language=language))
+        prepared_2 = set(self.preprocess(sent2, lemma, language=language))
         num_of_common = 0
         for word in prepared_1:
             if word in prepared_2:
@@ -63,10 +69,33 @@ class Extra_common_words_summarization:
         indexies = sorted([weight[i][1] for i in range(summary_len)])
         
         summary = ' '.join([sentences[i] for i in indexies])
-        print(weight[0][0], ' ', weight[summary_len - 1][0])
         return summary
 
-        def read_txt_file(self, text_file):
-            with open(text_file, 'r') as current_file:
-                text = current_file.read()
-            return self.summarize(text, language='russian')
+    def read_txt_file(self, text_file, language='english'):
+        with open(text_file, 'r') as current_file:
+            text = current_file.read()
+        return self.summarize(text, language='russian')
+
+    def words_distribution(self, text, language='russian'):
+        sentences = sent_tokenize(text)
+        lemma = lema
+        
+        distribution = defaultdict(int)
+        for sentence in sentences:
+            words = self.preprocess(sentence, lema, language=language)
+            for word in words:
+                distribution[word] += 1
+
+        return distribution
+
+    def adj_distribution(self, text):
+        sentences = sent_tokenize(text)
+        lemma = lema
+
+        distribution = defaultdict(int)
+        for sentence in sentences:
+            words = self.preprocess(sentence, lema, language='russian', taggs=['ADJS', 'ADJF'])
+            for word in words:
+                distribution[word] += 1
+
+        return distribution
